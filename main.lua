@@ -2,6 +2,8 @@ function love.load()
 	anim8 = require("libraries/anim8/anim8")
 
 	sti = require("libraries/Simple-Tiled-Implementation/sti")
+	cameraFile = require("libraries/hump/camera")
+	cam = cameraFile()
 
 	sprites = {}
 	sprites.playerSheet = love.graphics.newImage("sprites/playerSheet.png")
@@ -23,11 +25,10 @@ function love.load()
 
 	require("player")
 
-	platform = world:newRectangleCollider(250, 400, 300, 100, { collision_class = "Platform" })
-	platform:setType("static")
+	-- danzerZone = world:newRectangleCollider(0, 550, 800, 50, { collision_class = "Danger" })
+	-- danzerZone:setType("static")
 
-	danzerZone = world:newRectangleCollider(0, 550, 800, 50, { collision_class = "Danger" })
-	danzerZone:setType("static")
+	platforms = {}
 
 	loadMap()
 end
@@ -52,18 +53,36 @@ function love.mousepressed(x, y, button)
 	end
 end
 
+function spawnPlatform(x, y, w, h)
+	if w > 0 and h > 0 then
+		local platform = world:newRectangleCollider(x, y, w, h, { collision_class = "Platform" })
+		platform:setType("static")
+		table.insert(platforms, platform)
+	end
+end
+
 function love.update(dt)
 	world:update(dt)
 	gameMap:update(dt)
 	playerUpdate(dt)
+
+	local px, py = player:getPosition()
+	-- cam:lookAt(px, py)
+	cam:lookAt(px, love.graphics.getHeight() / 2)
 end
 
 function love.draw()
+	cam:attach()
 	gameMap:drawLayer(gameMap.layers["Tile Layer 1"])
-	world:draw()
+	-- world:draw()
 	playerDraw()
+	cam:detach()
 end
 
 function loadMap()
 	gameMap = sti("map/level-1.lua")
+
+	for i, obj in ipairs(gameMap.layers["Platform"].objects) do
+		spawnPlatform(obj.x, obj.y, obj.width, obj.height)
+	end
 end
