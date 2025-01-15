@@ -28,17 +28,25 @@ function love.load()
 
 	require("player")
 	require("enemy")
+	require("libraries/show")
 
 	-- danzerZone = world:newRectangleCollider(0, 550, 800, 50, { collision_class = "Danger" })
 	-- danzerZone:setType("static")
 
 	platforms = {}
 
-	currentLevel = "level-1"
+	saveData = {}
+	saveData.currentLevel = "level-1"
+
 	flagX = 0
 	flagY = 0
 
-	loadMap(currentLevel)
+	if love.filesystem.getInfo("data.lua") then
+		local data = love.filesystem.load("data.lua")
+		data()
+	end
+
+	loadMap(saveData.currentLevel)
 end
 
 function love.keypressed(key)
@@ -81,9 +89,10 @@ function love.update(dt)
 
 	local colliders = world:queryCircleArea(flagX, flagY, 10, { "Player" })
 	if #colliders > 0 then
-		if currentLevel == "leve-1" then
+		if saveData.currentLevel == "level-1" then
+			print(saveData.currentLevel)
 			loadMap("level-2")
-		elseif currentLevel == "leve-2" then
+		elseif saveData.currentLevel == "level-2" then
 			loadMap("level-1")
 		end
 	end
@@ -118,7 +127,9 @@ function destroyAll()
 end
 
 function loadMap(mapName)
-	currentLevel = mapName
+	saveData.currentLevel = mapName
+	love.filesystem.write("data.lua", table.show(saveData, "saveData"))
+
 	destroyAll()
 	player:setPosition(300, 100)
 	gameMap = sti("map/" .. mapName .. ".lua")
