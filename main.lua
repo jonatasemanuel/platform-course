@@ -5,9 +5,18 @@ function love.load()
 	cameraFile = require("libraries/hump/camera")
 	cam = cameraFile()
 
+	sounds = {}
+	sounds.jump = love.audio.newSource("sound/jump.wav", "static")
+	sounds.music = love.audio.newSource("sound/clavar.mp3", "stream")
+
+	sounds.music:setLooping(true)
+	sounds.music:setVolume(0.7)
+	sounds.music:play()
+
 	sprites = {}
 	sprites.playerSheet = love.graphics.newImage("sprites/playerSheet.png")
 	sprites.enemySheet = love.graphics.newImage("sprites/enemySheet.png")
+	sprites.background = love.graphics.newImage("sprites/background.png")
 
 	local grid = anim8.newGrid(614, 564, sprites.playerSheet:getWidth(), sprites.playerSheet:getHeight())
 	local enemyGrid = anim8.newGrid(100, 79, sprites.enemySheet:getWidth(), sprites.enemySheet:getHeight())
@@ -30,8 +39,8 @@ function love.load()
 	require("enemy")
 	require("libraries/show")
 
-	-- danzerZone = world:newRectangleCollider(0, 550, 800, 50, { collision_class = "Danger" })
-	-- danzerZone:setType("static")
+	danzerZone = world:newRectangleCollider(-500, 800, 5000, 50, { collision_class = "Danger" })
+	danzerZone:setType("static")
 
 	platforms = {}
 
@@ -55,6 +64,8 @@ function love.keypressed(key)
 		if #colliders > 0 then
 			if player.grounded then
 				player:applyLinearImpulse(0, -4000)
+				sounds.jump:setVolume(0.3)
+				sounds.jump:play()
 			end
 		end
 	end
@@ -99,6 +110,7 @@ function love.update(dt)
 end
 
 function love.draw()
+	love.graphics.draw(sprites.background, 0, 0)
 	cam:attach()
 	gameMap:drawLayer(gameMap.layers["Tile Layer 1"])
 	world:draw()
@@ -131,8 +143,15 @@ function loadMap(mapName)
 	love.filesystem.write("data.lua", table.show(saveData, "saveData"))
 
 	destroyAll()
-	player:setPosition(300, 100)
+	-- player:setPosition(playerStartX, playerStartY)
+
 	gameMap = sti("map/" .. mapName .. ".lua")
+
+	for i, obj in ipairs(gameMap.layers["Start"].objects) do
+		playerStartX = obj.x
+		playerStartY = obj.y
+	end
+	player:setPosition(playerStartX, playerStartY)
 
 	for i, obj in ipairs(gameMap.layers["Platform"].objects) do
 		spawnPlatform(obj.x, obj.y, obj.width, obj.height)
